@@ -34,7 +34,7 @@ export default function Home() {
   );
 }
 */
-
+//commit deneme yagmur
 // app/index.tsx
 import { Link } from "expo-router";
 import React from "react";
