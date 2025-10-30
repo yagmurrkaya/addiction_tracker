@@ -1,5 +1,6 @@
 {
   "expo": {
+    "entryPoint": "node_modules/expo-router/entry.js",
     "name": "addiction_tracker",
     "slug": "addiction_tracker",
     "version": "1.0.0",
