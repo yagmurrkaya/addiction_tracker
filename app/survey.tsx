@@ -1,5 +1,5 @@
 import Slider from "@react-native-community/slider";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { addDoc, collection, getDocs, query, Timestamp, where } from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
@@ -133,7 +133,7 @@ export default function SurveyScreen() {
   // 🔹 UI
   return (
     <ScrollView style={{ flex: 1, padding: 20 }} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Link href="/" style={{ color: "#007AFF", marginBottom: 8 }}>← Geri</Link>
+      
 
       <Text
         style={{
