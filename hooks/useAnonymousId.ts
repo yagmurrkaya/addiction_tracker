@@ -1,3 +1,4 @@
+/*
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
@@ -24,6 +25,28 @@ export default function useAnonymousId() {
     };
 
     loadOrCreateId();
+  }, []);
+
+  return userId;
+} */
+
+  import * as SecureStore from "expo-secure-store";
+import * as Crypto from "expo-crypto";
+import { useEffect, useState } from "react";
+
+export default function useAnonymousId() {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadOrCreate = async () => {
+      let id = await SecureStore.getItemAsync("anonymous_user_id");
+      if (!id) {
+        id = await Crypto.randomUUID();
+        await SecureStore.setItemAsync("anonymous_user_id", id);
+      }
+      setUserId(id);
+    };
+    loadOrCreate();
   }, []);
 
   return userId;
