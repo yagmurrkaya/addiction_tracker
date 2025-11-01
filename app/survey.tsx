@@ -47,7 +47,7 @@ export default function SurveyScreen() {
 
   // 🔹 Anketi gönder
   const submit = async () => {
-    if (loading) return; // tekrar tıklama engeli
+    if (loading) return;
     setLoading(true);
 
     if (!userId) {
@@ -167,13 +167,17 @@ export default function SurveyScreen() {
               <TouchableOpacity
                 key={opt}
                 onPress={() => {
-                  let updated: string[] = answers[q.id] || [];
+                  let updated: string[] = [...(answers[q.id] || [])];
 
                   if (isNoneOption) {
-                    // 🔹 Eğer "Hiçbiri" seçildiyse → diğerlerini temizle, sadece o kalsın
-                    updated = selected ? [] : [opt];
+                    if (selected) {
+                      updated = [];
+                    } else {
+                      // 🔹 "Hiçbiri" seçildiyse → diğerlerini temizle
+                      updated = [opt];
+                    }
                   } else {
-                    // 🔹 Eğer başka bir seçenek seçildiyse → "Hiçbiri"yi kaldır
+                    // 🔹 Diğer bir seçenek seçildiyse → "Hiçbiri"yi kaldır
                     updated = updated.filter((x) => x.toLowerCase() !== "hiçbiri");
 
                     if (selected) {
