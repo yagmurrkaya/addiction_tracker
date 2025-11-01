@@ -1,92 +1,58 @@
-// app/(tabs)/index.tsx
+import React, { useEffect, useRef } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import SurveyButton from "../../components/SurveyButton";
+import useAnonymousId from "../../hooks/useAnonymousId";
+import { scheduleSurveyReminders } from "../../hooks/useSurveyReminders";
 
-import { useRouter } from "expo-router";
-import { collection, getDocs, query, Timestamp, where } from "firebase/firestore";
-import React from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
-import useAnonymousId from "../../hooks/useAnonymousId"; // ✅ 2 seviye yukarı çıktık
-import { db } from "../firebase/firebaseConfig"; // ✅ düzeltildi
-
-export default function Home() {
-  const router = useRouter();
+export default function HomeScreen() {
   const userId = useAnonymousId();
+  const plannedRef = useRef(false); // 🔹 sadece ilk defa çalıştırmak için
 
-  const handleStartSurvey = async () => {
-    if (!userId) {
-      Alert.alert("Yükleniyor", "Kullanıcı kimliği alınıyor, lütfen tekrar deneyin.");
-      return;
-    }
+  useEffect(() => {
+    const planRemindersOnce = async () => {
+      if (!userId || plannedRef.current) return; // tekrar çalışmayı engelle
+      plannedRef.current = true;
 
-    try {
-      const now = new Date();
-      const startOfDay = new Date(now);
-      startOfDay.setHours(0, 0, 0, 0);
-
-      // 🔹 Bu kullanıcıya ait bugünkü anketleri çek
-      const q = query(
-        collection(db, "surveys"),
-        where("userId", "==", userId),
-        where("createdAt", ">=", Timestamp.fromDate(startOfDay))
-      );
-
-      const snap = await getDocs(q);
-      const todayDocs = snap.docs.map((d) => d.data());
-      const countToday = todayDocs.length;
-
-      // 🔹 Günlük 3 limit kontrolü
-      if (countToday >= 3) {
-        Alert.alert("Uyarı", "Günlük anket doldurma hakkınız doldu.");
-        return;
+      try {
+        console.log("🧠 Kullanıcı ID bulundu:", userId);
+        await scheduleSurveyReminders(userId);
+      } catch (err) {
+        console.error("Bildirim planlama hatası:", err);
       }
+    };
 
-      // 🔹 1 saat bekleme kontrolü
-      if (todayDocs.length > 0) {
-        const last = todayDocs.reduce((a: any, b: any) =>
-          a.createdAt.toMillis() > b.createdAt.toMillis() ? a : b
-        );
-        const lastTime = last.createdAt.toDate();
-        const diffMin = (now.getTime() - lastTime.getTime()) / (1000 * 60);
-
-        if (diffMin < 60) {
-          const remaining = Math.ceil(60 - diffMin);
-          Alert.alert(
-            "Bekleme Süresi",
-            `${remaining} dakika sonra tekrar deneyebilirsiniz.`
-          );
-          return;
-        }
-      }
-
-      // 🔹 Tüm kontroller geçti → Anket sayfasına yönlendir
-      router.push("/survey");
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Hata", "Anket kontrolü yapılırken bir sorun oluştu.");
-    }
-  };
+    planRemindersOnce();
+  }, [userId]);
 
   return (
-    <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 16 }}>
-      <Text style={{ fontSize: 22, fontWeight: "600", textAlign: "center" }}>
-        Addiction Tracker
+    <View style={styles.container}>
+      <Text style={styles.title}>📊 Addiction Tracker</Text>
+      <Text style={styles.subtitle}>
+        Günlük duygu ve madde kullanım anketine hoş geldin!
       </Text>
 
-      <Text style={{ textAlign: "center", color: "#666" }}>
-        Günlük anketi doldurarak takibine başla.
-      </Text>
-
-      <TouchableOpacity
-        onPress={handleStartSurvey}
-        style={{
-          backgroundColor: "#007AFF",
-          paddingVertical: 14,
-          borderRadius: 10,
-        }}
-      >
-        <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>
-          🧠 Ankete Başla
-        </Text>
-      </TouchableOpacity>
+      <SurveyButton />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    padding: 20,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    textAlign: "center",
+    color: "#555",
+    marginBottom: 20,
+  },
+});
