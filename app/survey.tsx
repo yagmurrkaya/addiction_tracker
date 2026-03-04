@@ -1,6 +1,13 @@
 import Slider from "@react-native-community/slider";
 import { useRouter } from "expo-router";
-import { addDoc, collection, getDocs, query, Timestamp, where } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import React, { useEffect, useState } from "react";
 import { Alert, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import useAnonymousId from "../hooks/useAnonymousId";
@@ -51,7 +58,10 @@ export default function SurveyScreen() {
     setLoading(true);
 
     if (!userId) {
-      Alert.alert("Yükleniyor", "Kullanıcı kimliği alınamadı. Lütfen tekrar deneyin.");
+      Alert.alert(
+        "Yükleniyor",
+        "Kullanıcı kimliği alınamadı. Lütfen tekrar deneyin.",
+      );
       setLoading(false);
       return;
     }
@@ -59,7 +69,12 @@ export default function SurveyScreen() {
     // 🔹 Tüm aktif soruların cevaplandığını kontrol et
     const allAnswered = questions.every((q) => {
       const ans = answers[q.id];
-      return ans !== undefined && ans !== null && ans !== "" && !(Array.isArray(ans) && ans.length === 0);
+      return (
+        ans !== undefined &&
+        ans !== null &&
+        ans !== "" &&
+        !(Array.isArray(ans) && ans.length === 0)
+      );
     });
 
     if (!allAnswered) {
@@ -77,10 +92,10 @@ export default function SurveyScreen() {
       const q = query(
         collection(db, "surveys"),
         where("userId", "==", userId),
-        where("createdAt", ">=", Timestamp.fromDate(startOfDay))
+        where("createdAt", ">=", Timestamp.fromDate(startOfDay)),
       );
       const snapshot = await getDocs(q);
-      const surveysToday = snapshot.docs.map(doc => doc.data());
+      const surveysToday = snapshot.docs.map((doc) => doc.data());
       const surveysCount = surveysToday.length;
 
       // 🔹 Günlük limit kontrolü
@@ -98,7 +113,10 @@ export default function SurveyScreen() {
 
         if (diffMinutes < 60) {
           const remaining = Math.ceil(60 - diffMinutes);
-          Alert.alert("Uyarı", `Anketi tekrar doldurmanız için ${remaining} dakika beklemelisiniz.`);
+          Alert.alert(
+            "Uyarı",
+            `Anketi tekrar doldurmanız için ${remaining} dakika beklemelisiniz.`,
+          );
           setLoading(false);
           return;
         }
@@ -124,7 +142,10 @@ export default function SurveyScreen() {
 
   // 🔹 UI
   return (
-    <ScrollView style={{ flex: 1, padding: 20 }} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView
+      style={{ flex: 1, padding: 20 }}
+      contentContainerStyle={{ paddingBottom: 40 }}
+    >
       <Text
         style={{
           fontSize: 22,
@@ -138,68 +159,79 @@ export default function SurveyScreen() {
 
       {questions.map((q) => (
         <View key={q.id} style={{ marginBottom: 24 }}>
-          <Text style={{ fontSize: 16, marginBottom: 8 }}>{q.questionText}</Text>
+          <Text style={{ fontSize: 16, marginBottom: 8 }}>
+            {q.questionText}
+          </Text>
 
           {/* Tekli cevap (single) */}
-          {q.type === "single" && q.options?.map((opt) => (
-            <TouchableOpacity
-              key={opt}
-              onPress={() => handleAnswer(q.id, opt)}
-              style={{
-                backgroundColor: answers[q.id] === opt ? "#007AFF" : "#E5E5E5",
-                padding: 10,
-                borderRadius: 10,
-                marginVertical: 4,
-              }}
-            >
-              <Text style={{ color: answers[q.id] === opt ? "white" : "black" }}>
-                {opt}
-              </Text>
-            </TouchableOpacity>
-          ))}
-
-          {/* Çoklu cevap (multi) */}
-          {q.type === "multi" && q.options?.map((opt) => {
-            const selected = answers[q.id]?.includes(opt);
-            const isNoneOption = opt.toLowerCase().includes("hiçbiri");
-
-            return (
+          {q.type === "single" &&
+            q.options?.map((opt) => (
               <TouchableOpacity
                 key={opt}
-                onPress={() => {
-                  let updated: string[] = [...(answers[q.id] || [])];
-
-                  if (isNoneOption) {
-                    if (selected) {
-                      updated = [];
-                    } else {
-                      // 🔹 "Hiçbiri" seçildiyse → diğerlerini temizle
-                      updated = [opt];
-                    }
-                  } else {
-                    // 🔹 Diğer bir seçenek seçildiyse → "Hiçbiri"yi kaldır
-                    updated = updated.filter((x) => x.toLowerCase() !== "hiçbiri");
-
-                    if (selected) {
-                      updated = updated.filter((x) => x !== opt);
-                    } else {
-                      updated.push(opt);
-                    }
-                  }
-
-                  handleAnswer(q.id, updated);
-                }}
+                onPress={() => handleAnswer(q.id, opt)}
                 style={{
-                  backgroundColor: selected ? "#007AFF" : "#E5E5E5",
+                  backgroundColor:
+                    answers[q.id] === opt ? "#007AFF" : "#E5E5E5",
                   padding: 10,
                   borderRadius: 10,
                   marginVertical: 4,
                 }}
               >
-                <Text style={{ color: selected ? "white" : "black" }}>{opt}</Text>
+                <Text
+                  style={{ color: answers[q.id] === opt ? "white" : "black" }}
+                >
+                  {opt}
+                </Text>
               </TouchableOpacity>
-            );
-          })}
+            ))}
+
+          {/* Çoklu cevap (multi) */}
+          {q.type === "multi" &&
+            q.options?.map((opt) => {
+              const selected = answers[q.id]?.includes(opt);
+              const isNoneOption = opt.toLowerCase().includes("hiçbiri");
+
+              return (
+                <TouchableOpacity
+                  key={opt}
+                  onPress={() => {
+                    let updated: string[] = [...(answers[q.id] || [])];
+
+                    if (isNoneOption) {
+                      if (selected) {
+                        updated = [];
+                      } else {
+                        // 🔹 "Hiçbiri" seçildiyse → diğerlerini temizle
+                        updated = [opt];
+                      }
+                    } else {
+                      // 🔹 Diğer bir seçenek seçildiyse → "Hiçbiri"yi kaldır
+                      updated = updated.filter(
+                        (x) => x.toLowerCase() !== "hiçbiri",
+                      );
+
+                      if (selected) {
+                        updated = updated.filter((x) => x !== opt);
+                      } else {
+                        updated.push(opt);
+                      }
+                    }
+
+                    handleAnswer(q.id, updated);
+                  }}
+                  style={{
+                    backgroundColor: selected ? "#007AFF" : "#E5E5E5",
+                    padding: 10,
+                    borderRadius: 10,
+                    marginVertical: 4,
+                  }}
+                >
+                  <Text style={{ color: selected ? "white" : "black" }}>
+                    {opt}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
 
           {/* Slider (craving düzeyi) */}
           {q.type === "slider" && (
@@ -234,7 +266,9 @@ export default function SurveyScreen() {
           marginTop: 24,
         }}
       >
-        <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>
+        <Text
+          style={{ color: "white", textAlign: "center", fontWeight: "700" }}
+        >
           {loading ? "Kaydediliyor..." : "Gönder"}
         </Text>
       </TouchableOpacity>
