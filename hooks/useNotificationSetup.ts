@@ -19,7 +19,10 @@ export function useNotificationSetup() {
   useEffect(() => {
     const requestPermissions = async () => {
       if (!Device.isDevice) {
-        Alert.alert("Uyarı", "Bildirimler sadece fiziksel cihazlarda çalışır 📱");
+        Alert.alert(
+          "Uyarı",
+          "Bildirimler sadece fiziksel cihazlarda çalışır 📱",
+        );
         return;
       }
 
@@ -39,7 +42,7 @@ export function useNotificationSetup() {
               [
                 { text: "Ayarları Aç", onPress: () => Linking.openSettings() },
                 { text: "İptal", style: "cancel" },
-              ]
+              ],
             );
           } else {
             console.log("✅ Bildirim izni verildi");
