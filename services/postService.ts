@@ -6,35 +6,30 @@ import {
     query,
     Timestamp,
 } from "firebase/firestore";
+import { ALL_FORBIDDEN_WORDS } from "../constants/forbiddenWords"; // 👈 Listeyi buradan alıyoruz
 import { db } from "./firebase/firebaseConfig";
 
-// 🔹 Filtrelenecek (Sansürlenecek) Örnek Şehir ve Özel Kelime Listesi
-const FORBIDDEN_WORDS = [
-  "istanbul",
-  "ankara",
-  "izmir",
-  "antalya",
-  "bursa",
-  "adana",
-  "sokak",
-  "cadde",
-  "mahallesi",
-  "no:",
-  "telefon",
-  "05",
-];
-
 export const PostService = {
-  // 🚀 Yeni Paylaşım Oluştur (Sansür Mekanizmalı)
   async createPost(userId: string, text: string) {
-    const username = `User#${userId.substring(0, 6)}`; // userId'nin ilk 6 hanesi
-
-    // 🛡️ Kural Tabanlı Filtreleme (Censorship)
+    const username = `User#${userId.substring(0, 6)}`;
     let filteredText = text;
-    FORBIDDEN_WORDS.forEach((word) => {
-      const regex = new RegExp(word, "gi"); // Büyük/küçük harf duyarsız
+
+    // 1️⃣ Kelime Bazlı Filtreleme (İsim, Şehir, Sokak vb.)
+    ALL_FORBIDDEN_WORDS.forEach((word) => {
+      // \\b kullanımı çok önemli: "Valide" içindeki "ali"yi sansürlemez,
+      // sadece tek başına "ali" yazarsa sansürler.
+      const regex = new RegExp(`\\b${word}\\b`, "gi");
       filteredText = filteredText.replace(regex, "*******");
     });
+
+    // 2️⃣ Telefon Numarası Filtreleme (Regex)
+    // 05xx veya 5xx ile başlayan Türkiye formatındaki numaraları yakalar
+    const phoneRegex = /(05|5)[0-9]{2}[- ]?[0-9]{3}[- ]?[0-9]{2}[- ]?[0-9]{2}/g;
+    filteredText = filteredText.replace(phoneRegex, "[TELEFON SANSÜRLENDİ]");
+
+    // 3️⃣ Uzun Sayı Dizileri (TC No, Adres No veya Bina No gibi 5 haneden uzun sayılar)
+    const numberRegex = /[0-9]{5,}/g;
+    filteredText = filteredText.replace(numberRegex, "******");
 
     return await addDoc(collection(db, "posts"), {
       userId,
@@ -44,7 +39,6 @@ export const PostService = {
     });
   },
 
-  // 📥 Tüm Paylaşımları Getir (En yeni en üstte)
   async fetchPosts() {
     const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
     const snapshot = await getDocs(q);
