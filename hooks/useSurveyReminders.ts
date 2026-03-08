@@ -9,6 +9,9 @@ import {
 } from "firebase/firestore";
 import { db } from "../services/firebase/firebaseConfig";
 
+// 🔐 Çakışmayı önlemek için fonksiyon dışında bir "kilit" değişkeni
+let isPlanning = false;
+
 /**
  * 🔹 10:00 - 22:00 arasında 3 rastgele saat üret (en az 1 saat aralıklı)
  */
@@ -29,13 +32,11 @@ const getRandomTimes = () => {
 
 /**
  * 🔹 Günlük 3 anket bildirimi planla
- * - Günlük yalnızca bir kez planlama yapılır
- * - Planlanan saatler console.log’a yazılır
  */
 export const scheduleSurveyReminders = async (userId: string) => {
-  if (!userId) {
-    console.log("⚠️ Bildirim planlaması iptal edildi: userId yok");
-    return { status: "no_user" };
+  // 1️⃣ Eğer userId yoksa veya şu an zaten bir planlama yapılıyorsa içeri alma
+  if (!userId || isPlanning) {
+    return { status: "busy_or_no_user" };
   }
 
   try {
@@ -43,29 +44,28 @@ export const scheduleSurveyReminders = async (userId: string) => {
     const alreadyPlanned = await AsyncStorage.getItem(todayKey);
 
     if (alreadyPlanned) {
-      // 🔹 Daha önce planlandıysa, son planlanan saatleri de göster
       const savedTimes = await AsyncStorage.getItem("last_planned_times");
       console.log(
-        "📅 Bugün için bildirim zaten planlandı, tekrar yapılmadı.",
+        "📅 Bugünün planı zaten hazır.",
         savedTimes
-          ? `🕒 Planlanan saatler: ${JSON.parse(savedTimes)
+          ? `🕒 Saatler: ${JSON.parse(savedTimes)
               .map(
                 (m: number) =>
-                  `${Math.floor(m / 60)}:${(m % 60)
-                    .toString()
-                    .padStart(2, "0")}`,
+                  `${Math.floor(m / 60)}:${(m % 60).toString().padStart(2, "0")}`,
               )
               .join(", ")}`
-          : "(saat bilgisi bulunamadı)",
+          : "",
       );
       return { status: "already_planned" };
     }
 
-    // 🔥 KRİTİK DÜZELTME: Yeni plan yapmadan önce ESKİ tüm bildirimleri iptal et.
-    // Böylece "zombi" bildirimlerden kurtuluruz.
+    // 🔒 Kilidi kapatıyoruz (İşlem başladı)
+    isPlanning = true;
+
+    // 2️⃣ ESKİ BİLDİRİMLERİ TEMİZLE: Zombi bildirimlerden kurtulmak için şart
     await Notifications.cancelAllScheduledNotificationsAsync();
 
-    // 🔹 Kullanıcının bugünkü doldurduğu anket sayısını kontrol et
+    // 3️⃣ Bugün kaç anket doldurduğunu kontrol et
     const now = new Date();
     const startOfDay = new Date(now);
     startOfDay.setHours(0, 0, 0, 0);
@@ -77,15 +77,13 @@ export const scheduleSurveyReminders = async (userId: string) => {
     );
 
     const snapshot = await getDocs(q);
-    const surveysToday = snapshot.docs.map((d) => d.data());
-    const count = surveysToday.length;
-
-    if (count >= 3) {
-      console.log("🎯 Günlük 3 anket doldurulmuş, yeni bildirim planlanmadı.");
+    if (snapshot.docs.length >= 3) {
+      console.log("🎯 Günlük limit dolmuş, bildirim kurulmadı.");
+      isPlanning = false; // Kilidi aç
       return { status: "limit_reached" };
     }
 
-    // 🔹 Rastgele 3 saat üret ve planla
+    // 4️⃣ Yeni saatleri üret ve planla
     const randomTimes = getRandomTimes();
 
     for (const t of randomTimes) {
@@ -94,7 +92,6 @@ export const scheduleSurveyReminders = async (userId: string) => {
       const triggerDate = new Date();
       triggerDate.setHours(hours, minutes, 0, 0);
 
-      // Eğer o saat geçmişse bir sonraki güne ayarla
       if (triggerDate.getTime() < Date.now()) {
         triggerDate.setDate(triggerDate.getDate() + 1);
       }
@@ -104,15 +101,15 @@ export const scheduleSurveyReminders = async (userId: string) => {
           title: "🧠 Anket Hatırlatması",
           body: "Bugünün anketini doldurmayı unutma!",
           sound: true,
+          priority: Notifications.AndroidPriority.HIGH,
         },
         trigger: {
-          type: "date",
           date: triggerDate,
         } as Notifications.DateTriggerInput,
       });
     }
 
-    // 🔹 Planlanan saatleri sakla
+    // 5️⃣ Hafızaya kaydet
     await AsyncStorage.setItem(todayKey, "true");
     await AsyncStorage.setItem(
       "last_planned_times",
@@ -129,9 +126,11 @@ export const scheduleSurveyReminders = async (userId: string) => {
         .join(", "),
     );
 
+    isPlanning = false; // ✅ Kilidi aç (İşlem bitti)
     return { status: "planned" };
   } catch (error) {
+    isPlanning = false; // 🔓 Hata durumunda kilidi aç ki tekrar denenebilsin
     console.error("❌ Bildirim planlama hatası:", error);
-    return { status: "error", error };
+    return { status: "error" };
   }
 };
