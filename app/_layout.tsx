@@ -1,8 +1,11 @@
-import useAnonymousId from "@/hooks/useAnonymousId";
-import { useNotificationSetup } from "@/hooks/useNotificationSetup";
-import { scheduleSurveyReminders } from "@/hooks/useSurveyReminders";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
+
+// 🔹 Klasörleri dışarı taşıdığımız için import yollarını güncelliyoruz
+// Not: Eğer tsconfig.json'da "@" takısı tanımlı değilse "../hooks/..." şeklinde kullanmalısın
+import useAnonymousId from "../hooks/useAnonymousId";
+import { useNotificationSetup } from "../hooks/useNotificationSetup";
+import { scheduleSurveyReminders } from "../hooks/useSurveyReminders";
 
 export default function RootLayout() {
   const userId = useAnonymousId();
@@ -18,21 +21,25 @@ export default function RootLayout() {
   }, [userId]);
 
   return (
-    <Stack>
+    <Stack screenOptions={{ headerShown: false }}>
+      {/* 🔹 Ana sekmeli yapı */}
       <Stack.Screen
         name="(tabs)"
         options={{
-          title: "Anasayfa",
           headerShown: false,
         }}
       />
 
-      {/* 🔹 “survey” sayfasında başlığı gizle, geri butonu kalsın */}
+      {/* 🔹 Anket Sayfası Ayarları */}
+      {/* Eğer uyarı devam ederse 'name' kısmının dosya adıyla (survey.tsx) 
+          birebir aynı (küçük/büyük harf dahil) olduğundan emin ol */}
       <Stack.Screen
         name="survey"
         options={{
-          title: "",
+          title: "Anket", // Header'da görünecek yazı (title: "" yaparsan boş görünür)
+          headerShown: true, // Geri butonunun görünmesi için true olmalı
           headerBackVisible: true,
+          headerShadowVisible: false, // Daha temiz bir görüntü için gölgeyi kaldırdık
         }}
       />
     </Stack>

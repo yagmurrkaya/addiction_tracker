@@ -1,7 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
-import { collection, getDocs, query, Timestamp, where } from "firebase/firestore";
-import { db } from "../app/firebase/firebaseConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore";
+import { db } from "../services/firebase/firebaseConfig";
 
 /**
  * 🔹 10:00 - 22:00 arasında 3 rastgele saat üret (en az 1 saat aralıklı)
@@ -9,7 +15,7 @@ import { db } from "../app/firebase/firebaseConfig";
 const getRandomTimes = () => {
   const times: number[] = [];
   const start = 10 * 60; // 10:00
-  const end = 22 * 60;   // 22:00
+  const end = 22 * 60; // 22:00
 
   while (times.length < 3) {
     const random = Math.floor(Math.random() * (end - start)) + start;
@@ -43,11 +49,14 @@ export const scheduleSurveyReminders = async (userId: string) => {
         "📅 Bugün için bildirim zaten planlandı, tekrar yapılmadı.",
         savedTimes
           ? `🕒 Planlanan saatler: ${JSON.parse(savedTimes)
-              .map((m: number) => `${Math.floor(m / 60)}:${(m % 60)
-                .toString()
-                .padStart(2, "0")}`)
+              .map(
+                (m: number) =>
+                  `${Math.floor(m / 60)}:${(m % 60)
+                    .toString()
+                    .padStart(2, "0")}`,
+              )
               .join(", ")}`
-          : "(saat bilgisi bulunamadı)"
+          : "(saat bilgisi bulunamadı)",
       );
       return { status: "already_planned" };
     }
@@ -60,7 +69,7 @@ export const scheduleSurveyReminders = async (userId: string) => {
     const q = query(
       collection(db, "surveys"),
       where("userId", "==", userId),
-      where("createdAt", ">=", Timestamp.fromDate(startOfDay))
+      where("createdAt", ">=", Timestamp.fromDate(startOfDay)),
     );
 
     const snapshot = await getDocs(q);
@@ -101,11 +110,19 @@ export const scheduleSurveyReminders = async (userId: string) => {
 
     // 🔹 Planlanan saatleri sakla
     await AsyncStorage.setItem(todayKey, "true");
-    await AsyncStorage.setItem("last_planned_times", JSON.stringify(randomTimes));
+    await AsyncStorage.setItem(
+      "last_planned_times",
+      JSON.stringify(randomTimes),
+    );
 
     console.log(
       "✅ Günlük bildirimler planlandı:",
-      randomTimes.map((m) => `${Math.floor(m / 60)}:${(m % 60).toString().padStart(2, "0")}`).join(", ")
+      randomTimes
+        .map(
+          (m) =>
+            `${Math.floor(m / 60)}:${(m % 60).toString().padStart(2, "0")}`,
+        )
+        .join(", "),
     );
 
     return { status: "planned" };

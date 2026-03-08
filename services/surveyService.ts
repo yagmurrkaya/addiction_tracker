@@ -6,7 +6,7 @@ import {
     Timestamp,
     where,
 } from "firebase/firestore";
-import { db } from "../app/firebase/firebaseConfig"; // Mevcut config yolun
+import { db } from "./firebase/firebaseConfig"; // Mevcut config yolun
 
 export const SurveyService = {
   // Soruları Getir

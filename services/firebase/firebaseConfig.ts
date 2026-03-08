@@ -7,14 +7,16 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
+console.log("🔥 PROJE ID'SI:", process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID);
+
 const firebaseConfig = {
-  apiKey: "AIzaSyC52gKdsJlIbXN3RpeHgCFYQmRIVAX-13o",
-  authDomain: "addictiontracker-aba95.firebaseapp.com",
-  projectId: "addictiontracker-aba95",
-  storageBucket: "addictiontracker-aba95.firebasestorage.app",
-  messagingSenderId: "980460748209",
-  appId: "1:980460748209:web:f873bde3ec3c867b62d190",
-  measurementId: "G-R7VWD59P3V"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
 // Initialize Firebase
@@ -23,4 +25,3 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 export { app, db };
-

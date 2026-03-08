@@ -1,9 +1,14 @@
 import { useRouter } from "expo-router";
-import { collection, getDocs, query, Timestamp, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  Timestamp,
+  where,
+} from "firebase/firestore";
 import React from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
-import { db } from "../app/firebase/firebaseConfig";
-
+import { db } from "../services/firebase/firebaseConfig";
 
 import useAnonymousId from "../hooks/useAnonymousId";
 
@@ -13,7 +18,10 @@ export default function SurveyButton() {
 
   const handleStartSurvey = async () => {
     if (!userId) {
-      Alert.alert("Yükleniyor", "Kullanıcı kimliği alınıyor, lütfen tekrar deneyin.");
+      Alert.alert(
+        "Yükleniyor",
+        "Kullanıcı kimliği alınıyor, lütfen tekrar deneyin.",
+      );
       return;
     }
 
@@ -26,10 +34,10 @@ export default function SurveyButton() {
       const q = query(
         collection(db, "surveys"),
         where("userId", "==", userId),
-        where("createdAt", ">=", Timestamp.fromDate(startOfDay))
+        where("createdAt", ">=", Timestamp.fromDate(startOfDay)),
       );
       const snap = await getDocs(q);
-      const todayDocs = snap.docs.map(d => d.data());
+      const todayDocs = snap.docs.map((d) => d.data());
       const countToday = todayDocs.length;
 
       // 1) Günlük 3 limit
@@ -42,7 +50,7 @@ export default function SurveyButton() {
       if (todayDocs.length > 0) {
         // en son doldurulan (docs doğal sıralı değilse createdAt’e göre en sonu bul)
         const last = todayDocs.reduce((a: any, b: any) =>
-          a.createdAt.toMillis() > b.createdAt.toMillis() ? a : b
+          a.createdAt.toMillis() > b.createdAt.toMillis() ? a : b,
         );
         const lastTime = last.createdAt.toDate();
         const diffMin = (now.getTime() - lastTime.getTime()) / (1000 * 60);
@@ -51,7 +59,7 @@ export default function SurveyButton() {
           const remaining = Math.ceil(60 - diffMin);
           Alert.alert(
             "Bekleme Süresi",
-            `${remaining} dakika sonra tekrar deneyebilirsiniz.`
+            `${remaining} dakika sonra tekrar deneyebilirsiniz.`,
           );
           return;
         }
@@ -71,7 +79,9 @@ export default function SurveyButton() {
         onPress={handleStartSurvey}
         style={{ backgroundColor: "#007AFF", padding: 16, borderRadius: 12 }}
       >
-        <Text style={{ color: "white", textAlign: "center", fontWeight: "700" }}>
+        <Text
+          style={{ color: "white", textAlign: "center", fontWeight: "700" }}
+        >
           🧠 Anketi Doldur
         </Text>
       </TouchableOpacity>
