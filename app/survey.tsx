@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 // 🔹 Temiz mimari importları
-import QuestionCard from "../components/QuestionCard"; // Yeni bileşenimiz
+import QuestionCard from "../components/QuestionCard";
 import { COLORS } from "../constants/Colors";
 import useAnonymousId from "../hooks/useAnonymousId";
 import { SurveyService } from "../services/surveyService";
@@ -91,8 +91,19 @@ export default function SurveyScreen() {
       }
 
       await SurveyService.saveSurveyResults(userId, answers);
+
+      // ✅ DEĞİŞİKLİK BURADA: router.push yerine router.back() kullanıyoruz
       Alert.alert("Başarılı 💙", "Cevaplarınız kaydedildi.", [
-        { text: "Tamam", onPress: () => router.push("/") },
+        {
+          text: "Tamam",
+          onPress: () => {
+            if (router.canGoBack()) {
+              router.back(); // Anket sayfasını kapatır ve geldiği yere (index) döner
+            } else {
+              router.replace("/(tabs)"); // Eğer geri gidemiyorsa ana tab yapısına zorla gönderir
+            }
+          },
+        },
       ]);
     } catch (error) {
       Alert.alert("Hata", "Kaydedilirken bir sorun oluştu.");
@@ -132,7 +143,6 @@ export default function SurveyScreen() {
         Günlük Değerlendirme
       </Text>
 
-      {/* 🔹 Tüm karmaşa tek satıra indi! */}
       {questions.map((q) => (
         <QuestionCard
           key={q.id}

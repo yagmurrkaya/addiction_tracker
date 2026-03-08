@@ -61,6 +61,10 @@ export const scheduleSurveyReminders = async (userId: string) => {
       return { status: "already_planned" };
     }
 
+    // 🔥 KRİTİK DÜZELTME: Yeni plan yapmadan önce ESKİ tüm bildirimleri iptal et.
+    // Böylece "zombi" bildirimlerden kurtuluruz.
+    await Notifications.cancelAllScheduledNotificationsAsync();
+
     // 🔹 Kullanıcının bugünkü doldurduğu anket sayısını kontrol et
     const now = new Date();
     const startOfDay = new Date(now);

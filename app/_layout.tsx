@@ -1,8 +1,7 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 
-// 🔹 Klasörleri dışarı taşıdığımız için import yollarını güncelliyoruz
-// Not: Eğer tsconfig.json'da "@" takısı tanımlı değilse "../hooks/..." şeklinde kullanmalısın
+// 🔹 Klasör yolları: Eğer hooks klasörü projenin en dışında (root) ise "../hooks" doğrudur.
 import useAnonymousId from "../hooks/useAnonymousId";
 import { useNotificationSetup } from "../hooks/useNotificationSetup";
 import { scheduleSurveyReminders } from "../hooks/useSurveyReminders";
@@ -10,10 +9,9 @@ import { scheduleSurveyReminders } from "../hooks/useSurveyReminders";
 export default function RootLayout() {
   const userId = useAnonymousId();
 
-  // 1️⃣ Bildirim izinlerini ayarlıyoruz
+  // 1️⃣ Global Bildirim ve ID Ayarları
   useNotificationSetup();
 
-  // 2️⃣ Günlük bildirimleri planlıyoruz
   useEffect(() => {
     if (userId) {
       scheduleSurveyReminders(userId);
@@ -21,8 +19,10 @@ export default function RootLayout() {
   }, [userId]);
 
   return (
+    // headerShown: false yapıyoruz çünkü alt sayfalar kendi başlıklarını yönetecek
     <Stack screenOptions={{ headerShown: false }}>
-      {/* 🔹 Ana sekmeli yapı */}
+      {/* 🔹 1. ANA YAPI (SEKMELER) */}
+      {/* Anasayfa, Duvar ve Ayarlar bu sekmelerin içinde yaşayacak */}
       <Stack.Screen
         name="(tabs)"
         options={{
@@ -30,16 +30,16 @@ export default function RootLayout() {
         }}
       />
 
-      {/* 🔹 Anket Sayfası Ayarları */}
-      {/* Eğer uyarı devam ederse 'name' kısmının dosya adıyla (survey.tsx) 
-          birebir aynı (küçük/büyük harf dahil) olduğundan emin ol */}
+      {/* 🔹 2. BAĞIMSIZ ANKET SAYFASI */}
+      {/* Butona basıldığında sekmelerin üstüne, tam ekran olarak açılır */}
       <Stack.Screen
         name="survey"
         options={{
-          title: "Anket", // Header'da görünecek yazı (title: "" yaparsan boş görünür)
-          headerShown: true, // Geri butonunun görünmesi için true olmalı
-          headerBackVisible: true,
-          headerShadowVisible: false, // Daha temiz bir görüntü için gölgeyi kaldırdık
+          title: "Günlük Değerlendirme",
+          headerShown: true, // Anket sayfasında üst başlık ve geri butonu görünsün
+          presentation: "modal", // 👈 iOS'ta aşağıdan yukarıya şık bir şekilde açılır
+          headerBackTitle: "Vazgeç",
+          headerShadowVisible: false,
         }}
       />
     </Stack>
