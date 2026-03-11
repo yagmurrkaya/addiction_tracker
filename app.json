@@ -10,7 +10,13 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Riskli bölgeleri haritada görebilmeniz için konum izni gereklidir.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Arka planda sizi koruyabilmemiz için konum iznini 'Her Zaman' olarak ayarlamanız önerilir.",
+        "NSLocationAlwaysUsageDescription": "Uygulama kapalıyken bile riskli bölgelerde size bildirim gönderebilmek için konuma ihtiyacımız var.",
+        "UIBackgroundModes": ["location", "fetch"]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -20,7 +26,19 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "FOREGROUND_SERVICE",
+        "FOREGROUND_SERVICE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "BURAYA_GOOGLE_MAPS_API_KEY_GELECEK"
+        }
+      }
     },
     "web": {
       "output": "static",
@@ -28,6 +46,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
@@ -40,7 +59,14 @@
           }
         }
       ],
-      "expo-secure-store"
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Riskli bölgelerde sizi koruyabilmemiz için 'Her Zaman' konum iznine ihtiyacımız var.",
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

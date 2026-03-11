@@ -42,9 +42,10 @@ export default function SurveyScreen() {
     const loadQuestions = async () => {
       try {
         const fetched = await SurveyService.fetchActiveQuestions();
+        console.log("🔍 Gelen Sorular:", fetched); // 👈 Bu satırı ekle
         setQuestions(fetched as Question[]);
       } catch (error: any) {
-        console.error("🔥 HATA:", error.message);
+        console.log("🔥 HATA DETAYI:", error); // 👈 console.error yerine detaylı log
         Alert.alert("Hata", "Sorular yüklenemedi.");
       } finally {
         setFetching(false);

@@ -101,7 +101,7 @@ export const scheduleSurveyReminders = async (userId: string) => {
           title: "🧠 Anket Hatırlatması",
           body: "Bugünün anketini doldurmayı unutma!",
           sound: true,
-          priority: Notifications.AndroidPriority.HIGH,
+          priority: Notifications.AndroidNotificationPriority.HIGH,
         },
         trigger: {
           date: triggerDate,
