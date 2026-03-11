@@ -1,47 +1,61 @@
 import { Tabs } from "expo-router";
 import React from "react";
-
-import { IconSymbol } from "@/components/ui/icon-symbol";
+// 1. Ionicons zaten import edilmiş, onu kullanacağız
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  // aa
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#007AFF",
+        tabBarActiveTintColor: "#007AFF", // Aktif sekme rengi
+        tabBarInactiveTintColor: "#8E8E93", // Pasif sekme rengi
         headerTitleAlign: "center",
       }}
     >
+      {/* 1. ANKET SEKME */}
       <Tabs.Screen
         name="index"
         options={{
           title: "Anket",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="wall"
-        options={{
-          title: "Paylaşım Duvarı",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol
-              size={28}
-              name="bubble.left.and.bubble.right.fill"
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "home" : "home-outline"}
+              size={24}
               color={color}
             />
           ),
         }}
       />
+
+      {/* 2. PAYLAŞIM DUVARI */}
+      <Tabs.Screen
+        name="wall"
+        options={{
+          title: "Paylaşım Duvarı",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "chatbubbles" : "chatbubbles-outline"}
+              size={24}
+              color={color}
+            />
+          ),
+        }}
+      />
+
+      {/* 3. AYARLAR SEKME */}
       <Tabs.Screen
         name="settings"
         options={{
           title: "Ayarlar",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="gearshape.fill" color={color} />
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons
+              name={focused ? "settings" : "settings-outline"}
+              size={24}
+              color={color}
+            />
           ),
         }}
       />

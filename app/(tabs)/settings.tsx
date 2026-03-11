@@ -54,20 +54,20 @@ export default function SettingsScreen() {
         setLocationEnabled(false);
       }
     } else {
-      // Konum takibini durdurma mantığı buraya gelebilir
       setLocationEnabled(false);
     }
   };
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
+      {/* <View style={styles.header}>
         <Text style={styles.headerTitle}>Ayarlar</Text>
-      </View>
+      </View> */}
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Güvenlik ve Farkındalık</Text>
 
+        {/* 1. Konum Servisi Aç/Kapat */}
         <View style={styles.settingItem}>
           <View style={{ flex: 1 }}>
             <Text style={styles.settingLabel}>Konum Servislerini Aç</Text>
@@ -78,11 +78,25 @@ export default function SettingsScreen() {
           <Switch
             value={locationEnabled}
             onValueChange={handleLocationToggle}
-            trackColor={{ false: "#D1D1D6", true: "#34C759" }} // iOS Yeşil rengi
+            trackColor={{ false: "#D1D1D6", true: "#34C759" }}
           />
         </View>
 
-        {/* 📝 İstediğin Uyarı Yazısı ve Buton */}
+        {/* 2. Kayıtlı Bölgeleri Yönetme Butonu */}
+        <TouchableOpacity
+          style={styles.settingItem}
+          onPress={() => router.push("/my-locations" as any)}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.settingLabel}>📍 Kayıtlı Bölgelerim</Text>
+            <Text style={styles.settingSubLabel}>
+              İşaretlediğin yerleri gör ve yönet.
+            </Text>
+          </View>
+          <Text style={styles.arrowIcon}>›</Text>
+        </TouchableOpacity>
+
+        {/* 3. Yeni Bölge Ekleme (Sadece servis açıkken görünür) */}
         {locationEnabled && (
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
@@ -95,7 +109,7 @@ export default function SettingsScreen() {
               onPress={() => router.push("/add-risky-location")}
             >
               <Text style={styles.actionButtonText}>
-                📍 Riskli Konumları Yönet / Ekle
+                ➕ Yeni Riskli Bölge Ekle
               </Text>
             </TouchableOpacity>
           </View>
@@ -144,6 +158,7 @@ const styles = StyleSheet.create({
   },
   settingLabel: { fontSize: 17, color: "#000", fontWeight: "500" },
   settingSubLabel: { fontSize: 13, color: "#8E8E93", marginTop: 2 },
+  arrowIcon: { fontSize: 24, color: "#C7C7CC", marginLeft: 8 },
   userIdText: {
     fontSize: 15,
     color: COLORS?.primary || "#007AFF",

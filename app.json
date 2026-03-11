@@ -11,11 +11,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.yagmur.addictiontracker", // Kendine göre bir isim ver
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "Riskli bölgeleri haritada görebilmeniz için konum izni gereklidir.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Arka planda sizi koruyabilmemiz için konum iznini 'Her Zaman' olarak ayarlamanız önerilir.",
-        "NSLocationAlwaysUsageDescription": "Uygulama kapalıyken bile riskli bölgelerde size bildirim gönderebilmek için konuma ihtiyacımız var.",
-        "UIBackgroundModes": ["location", "fetch"]
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Uygulama kapalıyken bile sizi koruyabilmemiz için konum iznini 'Her Zaman' yapmalısınız.",
+        "NSLocationAlwaysUsageDescription": "Arka planda konum takibi yaparak riskli bölgelerde bildirim gönderebilmemiz için bu izin şarttır.",
+        "UIBackgroundModes": ["location", "fetch", "remote-notification"]
       }
     },
     "android": {
