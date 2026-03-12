@@ -64,6 +64,7 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "Riskli bölgelerde sizi koruyabilmemiz için 'Her Zaman' konum iznine ihtiyacımız var.",
+          "locationWhenInUsePermission": "Riskli bölgeleri haritada görebilmeniz için konum izni gereklidir.",
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
