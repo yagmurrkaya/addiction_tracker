@@ -9,30 +9,6 @@ import useAnonymousId from "../hooks/useAnonymousId";
 import { useNotificationSetup } from "../hooks/useNotificationSetup";
 import { scheduleSurveyReminders } from "../hooks/useSurveyReminders";
 
-// // 🚀 ARKA PLAN GÖREVİ TANIMLAMASI (Burası fonksiyonun dışında olmalı!)
-// const LOCATION_TASK_NAME = "RISKY_ZONE_TASK";
-
-// TaskManager.defineTask(LOCATION_TASK_NAME, ({ data, error }: any) => {
-//   if (error) {
-//     console.error("Geofencing Hatası:", error);
-//     return;
-//   }
-
-//   // Kullanıcı riskli bir bölgeye giriş yaptığında tetiklenir
-//   if (data.eventType === Location.GeofencingEventType.Enter) {
-//     Notifications.scheduleNotificationAsync({
-//       content: {
-//         title: "Farkındalık Bildirimi 🌿",
-//         body: "Senin için riskli bir bölgedesin, iyi misin?",
-//         sound: true,
-//         priority: Notifications.AndroidPriority.HIGH,
-//       },
-//       trigger: null,
-//     });
-//   }
-// });
-
-// 🚀 ARKA PLAN GÖREVİ TANIMLAMASI
 // 🚀 ARKA PLAN GÖREVİ TANIMLAMASI
 const LOCATION_TASK_NAME = "RISKY_ZONE_TASK";
 

@@ -67,6 +67,13 @@
           "isAndroidBackgroundLocationEnabled": true,
           "isAndroidForegroundServiceEnabled": true
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png", // Varsa ikon yolun
+          "color": "#007AFF"
+        }
       ]
     ],
     "experiments": {

@@ -14,10 +14,7 @@ import QuestionCard from "../components/QuestionCard";
 import { COLORS } from "../constants/Colors";
 import useAnonymousId from "../hooks/useAnonymousId";
 import { SurveyService } from "../services/surveyService";
-import {
-  getRemainingCooldown,
-  validateAllAnswered,
-} from "../utils/surveyLogic";
+import { validateAllAnswered } from "../utils/surveyLogic"; // 💡 getRemainingCooldown artık burada gerekmediği için sildik
 
 // 🔹 Tip tanımlaması
 type Question = {
@@ -37,15 +34,14 @@ export default function SurveyScreen() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // 🔹 Veri yükleme mantığı
+  // 🔹 Soruları Firebase'den çekme
   useEffect(() => {
     const loadQuestions = async () => {
       try {
         const fetched = await SurveyService.fetchActiveQuestions();
-        console.log("🔍 Gelen Sorular:", fetched); // 👈 Bu satırı ekle
         setQuestions(fetched as Question[]);
       } catch (error: any) {
-        console.log("🔥 HATA DETAYI:", error); // 👈 console.error yerine detaylı log
+        console.log("🔥 Soru yükleme hatası:", error);
         Alert.alert("Hata", "Sorular yüklenemedi.");
       } finally {
         setFetching(false);
@@ -61,6 +57,7 @@ export default function SurveyScreen() {
   const submit = async () => {
     if (loading || !userId) return;
 
+    // ✅ Sadece bu kontrol kalmalı: Boş soru bırakılmasını engeller.
     if (!validateAllAnswered(questions, answers)) {
       Alert.alert("Uyarı", "Lütfen tüm sorulara cevap veriniz.");
       return;
@@ -68,45 +65,25 @@ export default function SurveyScreen() {
 
     setLoading(true);
     try {
-      const surveysToday = await SurveyService.getTodaySurveys(userId);
-
-      // Günlük Limit Kontrolü
-      if (surveysToday.length >= 3) {
-        Alert.alert("Limit Doldu", "Günde en fazla 3 anket doldurabilirsiniz.");
-        setLoading(false);
-        return;
-      }
-
-      // Saatlik Kontrol
-      if (surveysToday.length > 0) {
-        const lastSurvey = surveysToday[surveysToday.length - 1] as any;
-        const remaining = getRemainingCooldown(lastSurvey.createdAt.toDate());
-        if (remaining > 0) {
-          Alert.alert(
-            "Bekleyiniz",
-            `Yeni anket için ${remaining} dakika beklemelisiniz.`,
-          );
-          setLoading(false);
-          return;
-        }
-      }
+      // 🚀 BURADAKİ limit ve saatlik kontrolleri HomeScreen'e taşıdığımız için kaldırdık.
+      // Artık kullanıcı buraya ulaştıysa doğrudan kaydediyoruz.
 
       await SurveyService.saveSurveyResults(userId, answers);
 
-      // ✅ DEĞİŞİKLİK BURADA: router.push yerine router.back() kullanıyoruz
       Alert.alert("Başarılı 💙", "Cevaplarınız kaydedildi.", [
         {
           text: "Tamam",
           onPress: () => {
             if (router.canGoBack()) {
-              router.back(); // Anket sayfasını kapatır ve geldiği yere (index) döner
+              router.back();
             } else {
-              router.replace("/(tabs)"); // Eğer geri gidemiyorsa ana tab yapısına zorla gönderir
+              router.replace("/(tabs)");
             }
           },
         },
       ]);
     } catch (error) {
+      console.error("Kaydetme hatası:", error);
       Alert.alert("Hata", "Kaydedilirken bir sorun oluştu.");
     } finally {
       setLoading(false);

@@ -1,3 +1,4 @@
+import { collection, onSnapshot, orderBy, query } from "firebase/firestore"; // 👈 Canlı veri için ekledik
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -16,6 +17,7 @@ import {
 } from "react-native";
 import { COLORS } from "../../constants/Colors";
 import useAnonymousId from "../../hooks/useAnonymousId";
+import { db } from "../../services/firebase/firebaseConfig"; // 👈 Firebase bağlantın
 import { PostService } from "../../services/postService";
 
 export default function WallScreen() {
@@ -26,19 +28,31 @@ export default function WallScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadPosts = async () => {
-    try {
-      const data = await PostService.fetchPosts();
-      setPosts(data);
-    } catch (error) {
-      console.error("Yükleme hatası:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
+  // 📡 CANLI VERİ AKIŞI (onSnapshot)
   useEffect(() => {
-    loadPosts();
+    // Mesajların olduğu koleksiyonu hedefliyoruz
+    const postsRef = collection(db, "posts");
+    const q = query(postsRef, orderBy("createdAt", "desc"));
+
+    // Firebase'i dinlemeye başla
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const fetchedPosts = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setPosts(fetchedPosts);
+        setRefreshing(false);
+      },
+      (error) => {
+        console.error("Canlı veri okuma hatası:", error);
+        setRefreshing(false);
+      },
+    );
+
+    // 🛑 Sayfadan çıkınca dinleyiciyi kapat (Memory leak önlemek için)
+    return () => unsubscribe();
   }, []);
 
   const handleSend = async () => {
@@ -48,9 +62,10 @@ export default function WallScreen() {
       await PostService.createPost(userId, newPost);
       setNewPost("");
       setModalVisible(false);
-      Keyboard.dismiss(); // ✅ Klavye kapat
+      Keyboard.dismiss();
       Alert.alert("Başarılı 💙", "Yazınız anonim duvara eklendi.");
-      loadPosts();
+
+      // ✅ loadPosts() çağırmaya gerek kalmadı, onSnapshot otomatik güncelleyecek!
     } catch (error) {
       Alert.alert("Hata", "Paylaşılırken bir sorun oluştu.");
     } finally {
@@ -65,22 +80,25 @@ export default function WallScreen() {
         keyExtractor={(item) => item.id}
         refreshing={refreshing}
         onRefresh={() => {
+          // Canlı akış olduğu için aslında gerek yok ama
+          // kullanıcı alışkanlığı için manuel tetikleme bırakılabilir.
           setRefreshing(true);
-          loadPosts();
         }}
         renderItem={({ item }) => (
           <View style={styles.postCard}>
-            <Text style={styles.username}>{item.username}</Text>
+            <Text style={styles.username}>
+              {item.username || "Anonim Kullanıcı"}
+            </Text>
             <Text style={styles.postText}>{item.text}</Text>
             <Text style={styles.date}>
-              {item.createdAt
-                ?.toDate()
-                .toLocaleString("tr-TR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  day: "2-digit",
-                  month: "2-digit",
-                })}
+              {item.createdAt?.toDate()
+                ? item.createdAt.toDate().toLocaleString("tr-TR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "2-digit",
+                  })
+                : "Şimdi"}
             </Text>
           </View>
         )}
@@ -94,10 +112,8 @@ export default function WallScreen() {
       </TouchableOpacity>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
-        {/* 1️⃣ Boşluğa tıklandığında klavyeyi kapatmak için */}
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.modalContainer}>
-            {/* 2️⃣ İçeriği klavyenin üzerine taşımak için */}
             <KeyboardAvoidingView
               behavior={Platform.OS === "ios" ? "padding" : "height"}
               style={{ width: "100%" }}
@@ -116,7 +132,7 @@ export default function WallScreen() {
                   maxLength={280}
                   value={newPost}
                   onChangeText={setNewPost}
-                  autoFocus={true} // Modal açılınca klavye otomatik gelsin
+                  autoFocus={true}
                 />
 
                 <View style={styles.modalButtons}>
@@ -151,8 +167,6 @@ export default function WallScreen() {
   );
 }
 
-// ... styles kısmı bir önceki mesajla aynı kalabilir, sadece modalContainer'a
-// justifyContent: "flex-end" eklediğinden emin ol.
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
   postCard: {
@@ -211,11 +225,11 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: "#F2F2F7",
-    height: 120,
     borderRadius: 15,
     padding: 15,
     textAlignVertical: "top",
     fontSize: 16,
+    minHeight: 120,
   },
   modalButtons: {
     flexDirection: "row",
