@@ -35,6 +35,7 @@ export default function TabLayout() {
         name="wall"
         options={{
           title: "Paylaşım Duvarı",
+          href: null, // 👈 Bu satır ikonu menüden tamamen siler ama kod yerinde kalır!
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? "chatbubbles" : "chatbubbles-outline"}
