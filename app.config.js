@@ -34,7 +34,8 @@ export default {
     },
     android: {
       package: "com.yagmur.addictiontracker",
-      googleServicesFile: "./google-services.json",
+      googleServicesFile:
+        process.env.GOOGLE_SERVICES_JSON || "./google-services.json",
       permissions: [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",

@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage"; // 👈 Yerel hafıza için ekledik
-import { useRouter } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useRouter } from "expo-router"; // 👈 useFocusEffect eklendi
+import React, { useCallback, useEffect, useRef, useState } from "react"; // 👈 useCallback eklendi
 import {
   ActivityIndicator,
   Alert,
@@ -18,7 +18,26 @@ export default function HomeScreen() {
   const router = useRouter();
   const userId = useAnonymousId();
   const [checking, setChecking] = useState(false);
+  const [localCooldown, setLocalCooldown] = useState(0); // 👈 Yerel süreyi takip etmek için
   const plannedRef = useRef(false);
+
+  // 🚀 SAYFA HER ODAKLANDIĞINDA (Geri gelindiğinde dahil) KONTROL ET
+  useFocusEffect(
+    useCallback(() => {
+      const checkLocalStatus = async () => {
+        if (!userId) return;
+        const lastLocalSurvey = await AsyncStorage.getItem(
+          `last_survey_${userId}`,
+        );
+        if (lastLocalSurvey) {
+          const lastDate = new Date(parseInt(lastLocalSurvey));
+          const remaining = getRemainingCooldown(lastDate);
+          setLocalCooldown(remaining);
+        }
+      };
+      checkLocalStatus();
+    }, [userId]),
+  );
 
   useEffect(() => {
     if (userId && !plannedRef.current) {
@@ -28,39 +47,33 @@ export default function HomeScreen() {
   }, [userId]);
 
   const handleStartSurvey = async () => {
-    if (!userId) return;
+    if (!userId) {
+      Alert.alert("Bekleyiniz", "Kullanıcı kimliği hazırlanıyor...");
+      return;
+    }
+
     setChecking(true);
 
     try {
-      // 1️⃣ YEREL KONTROL (Firestore gecikmesine karşı koruma)
-      const lastLocalSurvey = await AsyncStorage.getItem(
-        `last_survey_${userId}`,
-      );
-      if (lastLocalSurvey) {
-        const lastDate = new Date(parseInt(lastLocalSurvey));
-        const localRemaining = getRemainingCooldown(lastDate);
-
-        if (localRemaining > 0) {
-          Alert.alert(
-            "Bekleme Süresi",
-            `Çok yeni bir anket doldurdunuz. ${localRemaining} dakika sonra tekrar deneyebilirsiniz.`,
-          );
-          setChecking(false);
-          return;
-        }
+      // 1️⃣ ÖNCE YEREL STATE KONTROLÜ (En hızlısı)
+      if (localCooldown > 0) {
+        Alert.alert(
+          "Bekleme Süresi",
+          `Çok yeni bir anket doldurdunuz. ${localCooldown} dakika sonra tekrar deneyebilirsiniz.`,
+        );
+        setChecking(false);
+        return;
       }
 
-      // 2️⃣ FİRESTORE KONTROLÜ (Genel limit ve diğer cihazlar için)
+      // 2️⃣ FİRESTORE KONTROLÜ (Yedek ve günlük limit için)
       const surveysToday = await SurveyService.getTodaySurveys(userId);
 
-      // Günlük 3 limit kontrolü
       if (surveysToday.length >= 3) {
         Alert.alert("Limit Doldu", "Günde en fazla 3 anket doldurabilirsiniz.");
         setChecking(false);
         return;
       }
 
-      // Saatlik cooldown kontrolü
       if (surveysToday.length > 0) {
         const lastSurvey = surveysToday[surveysToday.length - 1] as any;
         const remaining = getRemainingCooldown(lastSurvey.createdAt.toDate());
@@ -74,7 +87,6 @@ export default function HomeScreen() {
         }
       }
 
-      // ✅ TÜM KONTROLLER GEÇTİ
       router.push("/survey");
     } catch (error) {
       console.error("Hata:", error);
@@ -84,22 +96,33 @@ export default function HomeScreen() {
     }
   };
 
+  // Butonun devre dışı kalma mantığı
+  const isButtonDisabled = checking || localCooldown > 0;
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📊 Addiction Tracker</Text>
       <Text style={styles.subtitle}>İyileşme yolculuğunda bugün nasılsın?</Text>
 
       <TouchableOpacity
-        style={[styles.button, checking && { backgroundColor: "#ccc" }]}
+        style={[styles.button, isButtonDisabled && { backgroundColor: "#ccc" }]}
         onPress={handleStartSurvey}
-        disabled={checking}
+        disabled={isButtonDisabled}
       >
         {checking ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Anketi Doldur</Text>
+          <Text style={styles.buttonText}>
+            {localCooldown > 0 ? "Bekleme Modu" : "Anketi Doldur"}
+          </Text>
         )}
       </TouchableOpacity>
+
+      {localCooldown > 0 && (
+        <Text style={{ marginTop: 10, color: "#ff3b30" }}>
+          Kalan süre: {localCooldown} dk
+        </Text>
+      )}
     </View>
   );
 }

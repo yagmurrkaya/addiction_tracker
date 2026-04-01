@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,8 +9,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-// 👈 AsyncStorage importunu buraya ekliyoruz
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import QuestionCard from "../components/QuestionCard";
 import { COLORS } from "../constants/Colors";
@@ -17,7 +16,6 @@ import useAnonymousId from "../hooks/useAnonymousId";
 import { SurveyService } from "../services/surveyService";
 import { validateAllAnswered } from "../utils/surveyLogic";
 
-// ... (Question tipi aynı kalıyor)
 type Question = {
   id: string;
   questionText: string;
@@ -64,26 +62,22 @@ export default function SurveyScreen() {
 
     setLoading(true);
     try {
-      // 1. Önce veriyi Firebase'e kaydediyoruz
+      // 1. Veriyi Firebase'e kaydet
       await SurveyService.saveSurveyResults(userId, answers);
 
-      // 🚀 2. BURASI KRİTİK ADIM:
-      // Kayıt başarılı olduktan sonra yerel hafızaya "Şu an bitti" damgasını vuruyoruz.
-      // HomeScreen'deki kontrol tam olarak bu key'e bakacak.
+      // 2. Yerel hafızayı güncelle (Zaman damgası vur)
       await AsyncStorage.setItem(
         `last_survey_${userId}`,
         Date.now().toString(),
       );
 
+      // 3. Başarılı uyarısı ve Yönlendirme
       Alert.alert("Başarılı 💙", "Cevaplarınız kaydedildi.", [
         {
           text: "Tamam",
           onPress: () => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/(tabs)");
-            }
+            // Ana sayfaya 'replace' ile dönmek HomeScreen'i tetikler
+            router.replace("/(tabs)");
           },
         },
       ]);
