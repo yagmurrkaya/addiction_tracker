@@ -8,15 +8,16 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+// 👈 AsyncStorage importunu buraya ekliyoruz
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// 🔹 Temiz mimari importları
 import QuestionCard from "../components/QuestionCard";
 import { COLORS } from "../constants/Colors";
 import useAnonymousId from "../hooks/useAnonymousId";
 import { SurveyService } from "../services/surveyService";
-import { validateAllAnswered } from "../utils/surveyLogic"; // 💡 getRemainingCooldown artık burada gerekmediği için sildik
+import { validateAllAnswered } from "../utils/surveyLogic";
 
-// 🔹 Tip tanımlaması
+// ... (Question tipi aynı kalıyor)
 type Question = {
   id: string;
   questionText: string;
@@ -34,7 +35,6 @@ export default function SurveyScreen() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
 
-  // 🔹 Soruları Firebase'den çekme
   useEffect(() => {
     const loadQuestions = async () => {
       try {
@@ -57,7 +57,6 @@ export default function SurveyScreen() {
   const submit = async () => {
     if (loading || !userId) return;
 
-    // ✅ Sadece bu kontrol kalmalı: Boş soru bırakılmasını engeller.
     if (!validateAllAnswered(questions, answers)) {
       Alert.alert("Uyarı", "Lütfen tüm sorulara cevap veriniz.");
       return;
@@ -65,10 +64,16 @@ export default function SurveyScreen() {
 
     setLoading(true);
     try {
-      // 🚀 BURADAKİ limit ve saatlik kontrolleri HomeScreen'e taşıdığımız için kaldırdık.
-      // Artık kullanıcı buraya ulaştıysa doğrudan kaydediyoruz.
-
+      // 1. Önce veriyi Firebase'e kaydediyoruz
       await SurveyService.saveSurveyResults(userId, answers);
+
+      // 🚀 2. BURASI KRİTİK ADIM:
+      // Kayıt başarılı olduktan sonra yerel hafızaya "Şu an bitti" damgasını vuruyoruz.
+      // HomeScreen'deki kontrol tam olarak bu key'e bakacak.
+      await AsyncStorage.setItem(
+        `last_survey_${userId}`,
+        Date.now().toString(),
+      );
 
       Alert.alert("Başarılı 💙", "Cevaplarınız kaydedildi.", [
         {

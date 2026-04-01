@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage"; // 👈 Yerel hafıza için ekledik
 import { useRouter } from "expo-router";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -29,14 +30,37 @@ export default function HomeScreen() {
   const handleStartSurvey = async () => {
     if (!userId) return;
     setChecking(true);
+
     try {
+      // 1️⃣ YEREL KONTROL (Firestore gecikmesine karşı koruma)
+      const lastLocalSurvey = await AsyncStorage.getItem(
+        `last_survey_${userId}`,
+      );
+      if (lastLocalSurvey) {
+        const lastDate = new Date(parseInt(lastLocalSurvey));
+        const localRemaining = getRemainingCooldown(lastDate);
+
+        if (localRemaining > 0) {
+          Alert.alert(
+            "Bekleme Süresi",
+            `Çok yeni bir anket doldurdunuz. ${localRemaining} dakika sonra tekrar deneyebilirsiniz.`,
+          );
+          setChecking(false);
+          return;
+        }
+      }
+
+      // 2️⃣ FİRESTORE KONTROLÜ (Genel limit ve diğer cihazlar için)
       const surveysToday = await SurveyService.getTodaySurveys(userId);
 
+      // Günlük 3 limit kontrolü
       if (surveysToday.length >= 3) {
         Alert.alert("Limit Doldu", "Günde en fazla 3 anket doldurabilirsiniz.");
+        setChecking(false);
         return;
       }
 
+      // Saatlik cooldown kontrolü
       if (surveysToday.length > 0) {
         const lastSurvey = surveysToday[surveysToday.length - 1] as any;
         const remaining = getRemainingCooldown(lastSurvey.createdAt.toDate());
@@ -45,13 +69,15 @@ export default function HomeScreen() {
             "Bekleme Süresi",
             `${remaining} dakika sonra tekrar deneyebilirsiniz.`,
           );
+          setChecking(false);
           return;
         }
       }
 
-      // ✅ Tüm kontroller geçti, anket sayfasına yönlendir
+      // ✅ TÜM KONTROLLER GEÇTİ
       router.push("/survey");
     } catch (error) {
+      console.error("Hata:", error);
       Alert.alert("Hata", "Kontrol yapılırken bir sorun oluştu.");
     } finally {
       setChecking(false);

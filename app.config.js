@@ -8,6 +8,12 @@ export default {
     scheme: "addictiontracker",
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
+    updates: {
+      url: "https://u.expo.dev/a50efa03-047e-4065-8955-340a2dfad967",
+    },
+    runtimeVersion: {
+      policy: "appVersion",
+    },
     extra: {
       eas: {
         projectId: "a50efa03-047e-4065-8955-340a2dfad967",
@@ -28,6 +34,7 @@ export default {
     },
     android: {
       package: "com.yagmur.addictiontracker",
+      googleServicesFile: "./google-services.json",
       permissions: [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
