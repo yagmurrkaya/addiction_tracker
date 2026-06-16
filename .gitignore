@@ -44,4 +44,22 @@ app-example
 
 # Sensitive data
 .env
+google-services.jsongoogle-services.json
+.env
+.env.*
+
+# Local secrets
+firebase-key.json
 google-services.json
+*.env
+.env
+.env.*
+*adminsdk*.json
+
+# Local secrets
+firebase-key.json
+google-services.json
+*.env
+.env
+.env.*
+*adminsdk*.json

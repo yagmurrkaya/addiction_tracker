@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router"; // 👈 useFocusEffect eklendi
-import React, { useCallback, useEffect, useRef, useState } from "react"; // 👈 useCallback eklendi
+import * as Notifications from "expo-notifications";
+import { useFocusEffect, useRouter } from "expo-router";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -10,7 +11,7 @@ import {
   View,
 } from "react-native";
 import useAnonymousId from "../../hooks/useAnonymousId";
-import { scheduleSurveyReminders } from "../../hooks/useSurveyReminders";
+//import { scheduleSurveyReminders } from "../../hooks/useSurveyReminders";
 import { SurveyService } from "../../services/surveyService";
 import { getRemainingCooldown } from "../../utils/surveyLogic";
 
@@ -18,10 +19,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const userId = useAnonymousId();
   const [checking, setChecking] = useState(false);
-  const [localCooldown, setLocalCooldown] = useState(0); // 👈 Yerel süreyi takip etmek için
+  const [localCooldown, setLocalCooldown] = useState(0);
   const plannedRef = useRef(false);
 
-  // 🚀 SAYFA HER ODAKLANDIĞINDA (Geri gelindiğinde dahil) KONTROL ET
+  // Sayfa her odaklandığında bekleme süresini kontrol et
   useFocusEffect(
     useCallback(() => {
       const checkLocalStatus = async () => {
@@ -42,9 +43,25 @@ export default function HomeScreen() {
   useEffect(() => {
     if (userId && !plannedRef.current) {
       plannedRef.current = true;
-      scheduleSurveyReminders(userId);
+      //scheduleSurveyReminders(userId);
     }
   }, [userId]);
+
+  // Bildirim Kanalı Test Butonu (Hala lazım olabilir diye tuttum)
+  const triggerInstantTest = async () => {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Yerel Test ✅",
+          body: "Bildirim kanalı aktif!",
+          priority: Notifications.AndroidNotificationPriority.MAX,
+        },
+        trigger: null,
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const handleStartSurvey = async () => {
     if (!userId) {
@@ -55,17 +72,17 @@ export default function HomeScreen() {
     setChecking(true);
 
     try {
-      // 1️⃣ ÖNCE YEREL STATE KONTROLÜ (En hızlısı)
+      // 1️⃣ Yerel Süre Kontrolü
       if (localCooldown > 0) {
         Alert.alert(
           "Bekleme Süresi",
-          `Çok yeni bir anket doldurdunuz. ${localCooldown} dakika sonra tekrar deneyebilirsiniz.`,
+          ` ${localCooldown} dakika sonra tekrar deneyebilirsiniz.`,
         );
         setChecking(false);
         return;
       }
 
-      // 2️⃣ FİRESTORE KONTROLÜ (Yedek ve günlük limit için)
+      // 2️⃣ Firestore Kontrolü
       const surveysToday = await SurveyService.getTodaySurveys(userId);
 
       if (surveysToday.length >= 3) {
@@ -74,55 +91,38 @@ export default function HomeScreen() {
         return;
       }
 
-      if (surveysToday.length > 0) {
-        const lastSurvey = surveysToday[surveysToday.length - 1] as any;
-        const remaining = getRemainingCooldown(lastSurvey.createdAt.toDate());
-        if (remaining > 0) {
-          Alert.alert(
-            "Bekleme Süresi",
-            `${remaining} dakika sonra tekrar deneyebilirsiniz.`,
-          );
-          setChecking(false);
-          return;
-        }
-      }
-
       router.push("/survey");
     } catch (error) {
       console.error("Hata:", error);
-      Alert.alert("Hata", "Kontrol yapılırken bir sorun oluştu.");
+      Alert.alert("Hata", "Bağlantı sorunu oluştu.");
     } finally {
       setChecking(false);
     }
   };
-
-  // Butonun devre dışı kalma mantığı
-  const isButtonDisabled = checking || localCooldown > 0;
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>📊 Addiction Tracker</Text>
       <Text style={styles.subtitle}>İyileşme yolculuğunda bugün nasılsın?</Text>
 
+      {/* 🔘 Orijinal Buton Yapısı */}
       <TouchableOpacity
-        style={[styles.button, isButtonDisabled && { backgroundColor: "#ccc" }]}
+        style={[styles.button, checking && { backgroundColor: "#ccc" }]}
         onPress={handleStartSurvey}
-        disabled={isButtonDisabled}
+        disabled={checking} // Sadece kontrol anında pasif olur
       >
         {checking ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>
-            {localCooldown > 0 ? "Bekleme Modu" : "Anketi Doldur"}
-          </Text>
+          <Text style={styles.buttonText}>Anketi Doldur</Text>
         )}
       </TouchableOpacity>
 
-      {localCooldown > 0 && (
-        <Text style={{ marginTop: 10, color: "#ff3b30" }}>
-          Kalan süre: {localCooldown} dk
-        </Text>
-      )}
+      {/* Bildirim test butonunu artık gizliyoruz:
+      <TouchableOpacity onPress={triggerInstantTest} style={styles.miniTestBtn}>
+        <Text style={styles.miniTestText}>Bildirimi Test Et</Text>
+      </TouchableOpacity> 
+      */}
     </View>
   );
 }
@@ -147,6 +147,13 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 30,
+    elevation: 3,
   },
   buttonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  miniTestBtn: { marginTop: 50, opacity: 0.5 },
+  miniTestText: {
+    fontSize: 12,
+    color: "#999",
+    textDecorationLine: "underline",
+  },
 });

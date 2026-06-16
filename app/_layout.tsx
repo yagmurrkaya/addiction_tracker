@@ -2,32 +2,27 @@ import * as Location from "expo-location";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import * as TaskManager from "expo-task-manager";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-// 🔹 Hooks ve Servisler
 import useAnonymousId from "../hooks/useAnonymousId";
 import { useNotificationSetup } from "../hooks/useNotificationSetup";
 import { scheduleSurveyReminders } from "../hooks/useSurveyReminders";
 
-// 🚀 ARKA PLAN GÖREVİ TANIMLAMASI
 const LOCATION_TASK_NAME = "RISKY_ZONE_TASK";
 
-// TypeScript'in parametre hatasını gidermek için 'any' tipini fonksiyonun kendisine atıyoruz
 const taskExecutor: any = async ({ data, error }: any) => {
   if (error) {
     console.error("Geofencing Hatası:", error);
     return;
   }
 
-  // Kullanıcı riskli bir bölgeye giriş yaptığında tetiklenir (Enter = 1)
   if (data && data.eventType === Location.GeofencingEventType.Enter) {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Farkındalık Bildirimi 🌿",
         body: "Senin için riskli bir bölgedesin, iyi misin?",
         sound: true,
-        // SDK 54'te 'AndroidPriority' yerine 'AndroidNotificationPriority' kullanılır
-        priority: Notifications.AndroidNotificationPriority?.HIGH || "high",
+        priority: Notifications.AndroidNotificationPriority.HIGH,
       },
       trigger: null,
     });
@@ -39,18 +34,31 @@ TaskManager.defineTask(LOCATION_TASK_NAME, taskExecutor);
 export default function RootLayout() {
   const userId = useAnonymousId();
 
-  // 1️⃣ Global Bildirim ve ID Ayarları
+  // Aynı app oturumunda tekrar tekrar planlamayı engeller
+  const reminderScheduledRef = useRef(false);
+
   useNotificationSetup();
 
   useEffect(() => {
-    if (userId) {
-      scheduleSurveyReminders(userId);
+    if (!userId) return;
+
+    if (reminderScheduledRef.current) {
+      console.log("⏭️ Bildirim planlama bu oturumda zaten çalıştı.");
+      return;
     }
+
+    reminderScheduledRef.current = true;
+
+    console.log(
+      "🔥 Bildirim planlama RootLayout içinde çalıştı. userId:",
+      userId,
+    );
+
+    scheduleSurveyReminders(userId);
   }, [userId]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      {/* 🔹 1. ANA YAPI (SEKMELER) */}
       <Stack.Screen
         name="(tabs)"
         options={{
@@ -58,7 +66,6 @@ export default function RootLayout() {
         }}
       />
 
-      {/* 🔹 2. BAĞIMSIZ ANKET SAYFASI */}
       <Stack.Screen
         name="survey"
         options={{
@@ -70,13 +77,12 @@ export default function RootLayout() {
         }}
       />
 
-      {/* 🔹 3. RİSKLİ KONUM EKLEME SAYFASI */}
       <Stack.Screen
         name="add-risky-location"
         options={{
           title: "Riskli Bölge Seç",
           headerShown: true,
-          presentation: "card", // Normal sayfa geçişi
+          presentation: "card",
           headerBackTitle: "Geri",
         }}
       />

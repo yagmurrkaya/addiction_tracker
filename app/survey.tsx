@@ -32,15 +32,34 @@ export default function SurveyScreen() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // 👈 Hata mesajı için
 
   useEffect(() => {
     const loadQuestions = async () => {
       try {
+        console.log("📡 1. Firebase'den sorular isteniyor...");
         const fetched = await SurveyService.fetchActiveQuestions();
-        setQuestions(fetched as Question[]);
+
+        console.log("📡 2. Firebase Yanıtı Geldi:", fetched);
+
+        if (!fetched || fetched.length === 0) {
+          console.log("⚠️ 3. Uyarı: Hiç soru bulunamadı!");
+          setErrorMessage(
+            "Şu an aktif soru bulunmuyor. Lütfen veritabanını kontrol edin.",
+          );
+        } else {
+          console.log(
+            "✅ 4. Sorular başarıyla yüklendi. Sayı:",
+            fetched.length,
+          );
+          setQuestions(fetched as Question[]);
+        }
       } catch (error: any) {
-        console.log("🔥 Soru yükleme hatası:", error);
-        Alert.alert("Hata", "Sorular yüklenemedi.");
+        console.error("🔥 ❌ SORU YÜKLEME HATASI:", error);
+        setErrorMessage(
+          "Bağlantı hatası: " + (error.message || "Bilinmeyen hata"),
+        );
+        Alert.alert("Hata", "Sorular yüklenirken bir sorun oluştu.");
       } finally {
         setFetching(false);
       }
@@ -62,24 +81,14 @@ export default function SurveyScreen() {
 
     setLoading(true);
     try {
-      // 1. Veriyi Firebase'e kaydet
       await SurveyService.saveSurveyResults(userId, answers);
-
-      // 2. Yerel hafızayı güncelle (Zaman damgası vur)
       await AsyncStorage.setItem(
         `last_survey_${userId}`,
         Date.now().toString(),
       );
 
-      // 3. Başarılı uyarısı ve Yönlendirme
       Alert.alert("Başarılı 💙", "Cevaplarınız kaydedildi.", [
-        {
-          text: "Tamam",
-          onPress: () => {
-            // Ana sayfaya 'replace' ile dönmek HomeScreen'i tetikler
-            router.replace("/(tabs)");
-          },
-        },
+        { text: "Tamam", onPress: () => router.replace("/(tabs)") },
       ]);
     } catch (error) {
       console.error("Kaydetme hatası:", error);
@@ -89,16 +98,49 @@ export default function SurveyScreen() {
     }
   };
 
+  // 🔄 Yükleme Ekranı
   if (fetching) {
     return (
       <View
         style={{
           flex: 1,
           justifyContent: "center",
+          alignItems: "center",
           backgroundColor: COLORS.background,
         }}
       >
         <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={{ marginTop: 10, color: COLORS.text }}>
+          Sorular getiriliyor...
+        </Text>
+      </View>
+    );
+  }
+
+  // ❌ Hata veya Boş Ekran Durumu
+  if (errorMessage) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text style={{ textAlign: "center", fontSize: 16, marginBottom: 20 }}>
+          {errorMessage}
+        </Text>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            backgroundColor: COLORS.primary,
+            padding: 15,
+            borderRadius: 10,
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "bold" }}>Geri Dön</Text>
+        </TouchableOpacity>
       </View>
     );
   }
